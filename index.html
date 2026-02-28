@@ -142,13 +142,12 @@
 
 <div id="legend">
   <h4>Climb difficulty</h4>
-  <div class="lr"><div class="ll" style="width:28px;height:5px;background:var(--hc)"></div>Hors Categorie</div>
+  <div class="lr"><div class="ll" style="width:28px;height:4px;background:var(--hc)"></div>Hors Categorie</div>
   <div class="lr"><div class="ll" style="width:28px;height:4px;background:var(--c1)"></div>Categorie 1</div>
-  <div class="lr"><div class="ll" style="width:28px;height:3px;background:var(--c2)"></div>Categorie 2</div>
-  <div class="lr"><div class="ll" style="width:28px;height:3px;background:var(--c3)"></div>Categorie 3</div>
-  <div class="lr"><div class="ll" style="width:28px;height:2px;background:var(--c4)"></div>Categorie 4</div>
+  <div class="lr"><div class="ll" style="width:28px;height:4px;background:var(--c2)"></div>Categorie 2</div>
+  <div class="lr"><div class="ll" style="width:28px;height:4px;background:var(--c3)"></div>Categorie 3</div>
+  <div class="lr"><div class="ll" style="width:28px;height:4px;background:var(--c4)"></div>Categorie 4</div>
   <div class="lsep"></div>
-  <div class="lr" style="color:#aaa">width = gradient %</div>
   <div class="lr" style="color:#aaa">arrow = uphill direction</div>
 </div>
 
@@ -156,7 +155,7 @@
 const CAT_COLORS = { HC:'#7b1fa2','1':'#d32f2f','2':'#f57c00','3':'#388e3c','4':'#1976d2','5':'#9e9e9e' };
 
 const catExpr   = ['match',['get','category'],'HC','#7b1fa2','1','#d32f2f','2','#f57c00','3','#388e3c','4','#1976d2','5','#9e9e9e','#999'];
-const widthExpr = ['interpolate',['linear'],['coalesce',['get','gradient'],5],0,1.5,5,2.5,8,4,10,5.5,15,7,20,9];
+const widthExpr = 3;
 
 
 const map = new maplibregl.Map({
@@ -241,9 +240,7 @@ map.on('load', async () => {
 
   map.addLayer({ id:'lines-shadow', type:'line', source:'climblines', minzoom:11,
     layout:{'line-join':'round','line-cap':'round'},
-    paint:{'line-color':'#000','line-blur':3,'line-opacity':0.3,
-      'line-width':['interpolate',['linear'],['coalesce',['get','gradient'],5],0,5,5,7,10,11,20,15]}
-  });
+    paint:{'line-color':'#000','line-blur':3,'line-opacity':0.25,'line-width':7}  });
   map.addLayer({ id:'lines', type:'line', source:'climblines', minzoom:11,
     layout:{'line-join':'round','line-cap':'round'},
     paint:{'line-color':catExpr,'line-width':widthExpr,'line-opacity':0.92}
@@ -274,12 +271,17 @@ map.on('load', async () => {
   map.addLayer({ id:'lines-selected', type:'line', source:'climblines', minzoom:11,
     filter:['==',['get','id'],-1],
     layout:{'line-join':'round','line-cap':'round'},
-    paint:{'line-color':'#fff','line-width':14,'line-opacity':0.6,'line-blur':6}
+    paint:{'line-color':'#fff','line-width':18,'line-opacity':0.5,'line-blur':8}
   });
   map.addLayer({ id:'lines-selected-stroke', type:'line', source:'climblines', minzoom:11,
     filter:['==',['get','id'],-1],
     layout:{'line-join':'round','line-cap':'round'},
-    paint:{'line-color':catExpr,'line-width':6,'line-opacity':1.0}
+    paint:{'line-color':'#000','line-width':9,'line-opacity':0.9,'line-gap-width':0}
+  });
+  map.addLayer({ id:'lines-selected-fill', type:'line', source:'climblines', minzoom:11,
+    filter:['==',['get','id'],-1],
+    layout:{'line-join':'round','line-cap':'round'},
+    paint:{'line-color':catExpr,'line-width':3,'line-opacity':1.0}
   });
   map.addLayer({ id:'locs', type:'symbol', source:'localities',
     layout:{
@@ -361,6 +363,7 @@ function showPanel(p, ll) {
   const lineFilter = ['==',['get','id'], p.id != null ? p.id : -1];
   map.setFilter('lines-selected', lineFilter);
   map.setFilter('lines-selected-stroke', lineFilter);
+  map.setFilter('lines-selected-fill', lineFilter);
   const cat = p.category || '?';
   document.getElementById('ph-cat').textContent = cat;
   document.getElementById('ph-cat').style.background = CAT_COLORS[cat] || '#555';
@@ -387,6 +390,7 @@ function closePanel() {
   document.getElementById('ph-nav').style.display = 'none';
   map.setFilter('lines-selected', ['==',['get','id'],-1]);
   map.setFilter('lines-selected-stroke', ['==',['get','id'],-1]);
+  map.setFilter('lines-selected-fill', ['==',['get','id'],-1]);
   _features = [];
 }
 function addTag(c,t) { const s=document.createElement('span'); s.className='tag'; s.textContent=t; c.appendChild(s); }
