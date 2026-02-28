@@ -192,14 +192,19 @@ function filterFC(fc) {
   return { ...fc, features: fc.features.filter(f => cats.includes(f.properties && f.properties.category)) };
 }
 
+let _climbpointsGeoJSON = null;
+
 async function refreshClimbs() {
   if (!map.getSource('climblines')) return;
   const b = map.getBounds();
   const bbox = [b.getWest(), b.getSouth(), b.getEast(), b.getNorth()];
   const zoom = map.getZoom();
   setLoad(1);
-  try { map.getSource('climbpoints').setData(filterFC(await loadFGB('data/climbpoints.fgb', bbox))); }
-  catch(e) { console.warn(e); } finally { setLoad(-1); }
+  try {
+    const data = filterFC(await loadFGB('data/climbpoints.fgb', bbox));
+    _climbpointsGeoJSON = data;
+    map.getSource('climbpoints').setData(data);
+  } catch(e) { console.warn(e); } finally { setLoad(-1); }
   if (zoom >= 11) {
     setLoad(1);
     try { map.getSource('climblines').setData(filterFC(await loadFGB('data/climblines.fgb', bbox))); }
@@ -325,12 +330,35 @@ map.on('load', async () => {
   catch(e) { console.warn(e); } finally { setLoad(-1); }
 
   map.on('moveend', refreshClimbs);
-  refreshClimbs();
+  await refreshClimbs();
+  applyUrlSelection();
 });
 
 let _ll = null;
 let _features = [];
 let _featIdx = 0;
+
+// ── URL sharing ───────────────────────────────────────────────────────────────
+function setClimbParam(id) {
+  const p = new URLSearchParams(window.location.search);
+  p.set('climb', id);
+  history.replaceState(null, '', '?' + p + window.location.hash);
+}
+function clearClimbParam() {
+  const p = new URLSearchParams(window.location.search);
+  p.delete('climb');
+  const s = p.toString() ? '?' + p : '';
+  history.replaceState(null, '', s + window.location.hash);
+}
+function applyUrlSelection() {
+  const id = new URLSearchParams(window.location.search).get('climb');
+  if (!id || !_climbpointsGeoJSON) return;
+  const feat = _climbpointsGeoJSON.features.find(f => String(f.properties.id) === id);
+  if (!feat) return;
+  const [lon, lat] = feat.geometry.coordinates;
+  map.flyTo({ center: [lon, lat], zoom: Math.max(map.getZoom(), 13) });
+  showFeatures([feat], { lat, lng: lon });
+}
 
 function showFeatures(features, ll) {
   _features = features;
@@ -364,6 +392,7 @@ function showPanel(p, ll) {
   map.setFilter('lines-selected', lineFilter);
   map.setFilter('lines-selected-stroke', lineFilter);
   map.setFilter('lines-selected-fill', lineFilter);
+  if (p.id != null) setClimbParam(p.id);
   const cat = p.category || '?';
   document.getElementById('ph-cat').textContent = cat;
   document.getElementById('ph-cat').style.background = CAT_COLORS[cat] || '#555';
@@ -391,6 +420,7 @@ function closePanel() {
   map.setFilter('lines-selected', ['==',['get','id'],-1]);
   map.setFilter('lines-selected-stroke', ['==',['get','id'],-1]);
   map.setFilter('lines-selected-fill', ['==',['get','id'],-1]);
+  clearClimbParam();
   _features = [];
 }
 function addTag(c,t) { const s=document.createElement('span'); s.className='tag'; s.textContent=t; c.appendChild(s); }
