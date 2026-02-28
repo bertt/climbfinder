@@ -73,6 +73,7 @@
     #sv-close { position: absolute; top: 6px; right: 8px; z-index: 1; background: rgba(0,0,0,.6);
                 color: #fff; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; }
     @media (max-width: 560px) { #panel { width: calc(100vw - 20px); } #sv { right:10px; width:calc(100vw - 20px); } }
+    .maplibregl-ctrl-top-right { top: 52px !important; }
     #btn-3d {
       padding: 4px 11px; border-radius: 20px; font-size: 12px; font-weight: 700;
       cursor: pointer; border: none; background: rgba(255,255,255,.12); color: var(--text);
@@ -150,6 +151,7 @@ const map = new maplibregl.Map({
   center: [5.0, 46.5], zoom: 5, pitch: 60, hash: true
 });
 map.addControl(new maplibregl.NavigationControl(), 'top-right');
+
 map.addControl(new maplibregl.ScaleControl({ unit:'metric' }), 'bottom-left');
 
 async function loadFGB(url, bbox) {
