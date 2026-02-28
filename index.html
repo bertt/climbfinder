@@ -73,6 +73,12 @@
     #sv-close { position: absolute; top: 6px; right: 8px; z-index: 1; background: rgba(0,0,0,.6);
                 color: #fff; border: none; border-radius: 4px; padding: 2px 8px; cursor: pointer; }
     @media (max-width: 560px) { #panel { width: calc(100vw - 20px); } #sv { right:10px; width:calc(100vw - 20px); } }
+    #btn-3d {
+      padding: 4px 11px; border-radius: 20px; font-size: 12px; font-weight: 700;
+      cursor: pointer; border: none; background: rgba(255,255,255,.12); color: var(--text);
+      transition: background .2s;
+    }
+    #btn-3d.active { background: var(--accent); }
   </style>
 </head>
 <body>
@@ -93,6 +99,7 @@
     <input type="checkbox" id="f-4"  class="cb cb-4"  checked><label for="f-4"  class="cb-lbl">4</label>
   </div>
   <span id="loader"></span>
+  <button id="btn-3d" title="Toggle 3D terrain">3D</button>
 </div>
 
 <div id="map"></div>
@@ -139,7 +146,7 @@ const widthExpr = ['interpolate',['linear'],['coalesce',['get','gradient'],5],0,
 const map = new maplibregl.Map({
   container: 'map',
   style: 'https://tiles.openfreemap.org/styles/liberty',
-  center: [5.0, 46.5], zoom: 5, hash: true
+  center: [5.0, 46.5], zoom: 5, pitch: 60, hash: true
 });
 map.addControl(new maplibregl.NavigationControl(), 'top-right');
 map.addControl(new maplibregl.ScaleControl({ unit:'metric' }), 'bottom-left');
@@ -187,6 +194,27 @@ async function refreshClimbs() {
 const empty = { type:'FeatureCollection', features:[] };
 
 map.on('load', async () => {
+
+  map.addSource('mapterhorn-terrain', {
+    type: 'raster-dem',
+    tiles: ['https://tiles.mapterhorn.com/{z}/{x}/{y}.webp'],
+    tileSize: 512,
+    encoding: 'terrarium'
+  });
+
+  map.addLayer({
+    id: 'hillshade',
+    type: 'hillshade',
+    source: 'mapterhorn-terrain',
+    paint: { 'hillshade-exaggeration': 0.25 }
+  });
+
+  map.setTerrain({ source: 'mapterhorn-terrain', exaggeration: 1.5 });
+  map.addLayer({ id:'sky', type:'sky', paint:{
+    'sky-type':'atmosphere',
+    'sky-atmosphere-sun':[0,90],
+    'sky-atmosphere-sun-intensity':15
+  }});
 
 
   map.addSource('climblines',  { type:'geojson', data: empty });
@@ -300,6 +328,20 @@ document.getElementById('sv-close').onclick = () => document.getElementById('sv'
 ['hc','1','2','3','4'].forEach(c =>
   document.getElementById('f-'+c).addEventListener('change', refreshClimbs)
 );
+
+let terrain3d = true;
+document.getElementById('btn-3d').classList.add('active');
+document.getElementById('btn-3d').onclick = () => {
+  terrain3d = !terrain3d;
+  document.getElementById('btn-3d').classList.toggle('active', terrain3d);
+  if (terrain3d) {
+    map.setTerrain({ source: 'mapterhorn-terrain', exaggeration: 1.5 });
+    map.easeTo({ pitch: 60 });
+  } else {
+    map.setTerrain(null);
+    map.easeTo({ pitch: 0 });
+  }
+};
 </script>
 </body>
 </html>
