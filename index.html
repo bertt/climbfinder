@@ -32,9 +32,28 @@
     .cb-hc+.cb-lbl{background:var(--hc)} .cb-1+.cb-lbl{background:var(--c1)}
     .cb-2+.cb-lbl{background:var(--c2)}  .cb-3+.cb-lbl{background:var(--c3)}
     .cb-4+.cb-lbl{background:var(--c4)}  .cb-5+.cb-lbl{background:var(--c5)}
-    #loader { font-size: 11px; color: #aaa; white-space: nowrap; }
+    #loader {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 11px; color: #aaa; white-space: nowrap;
+    }
+    #loader-spinner {
+      width: 14px; height: 14px; border-radius: 50%;
+      border: 2px solid rgba(255,255,255,.2);
+      border-top-color: var(--accent);
+      animation: spin .7s linear infinite;
+      display: none;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    #loader.active #loader-spinner { display: block; }
+    #loader-bar {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 2px;
+      background: var(--accent); transform-origin: left;
+      transform: scaleX(0); transition: transform .3s ease; opacity: 0;
+    }
+    #bar { position: relative; }
+    #loader.active #loader-bar { transform: scaleX(0.7); opacity: 1; }
     #panel {
-      position: absolute; top: 52px; right: 10px; width: 290px; z-index: 20;
+      position: absolute; top: 190px; right: 10px; width: 290px; z-index: 20;
       background: var(--card); border-radius: 10px; overflow: hidden;
       box-shadow: 0 6px 28px rgba(0,0,0,.55);
       transform: translateX(310px); transition: transform .28s cubic-bezier(.4,0,.2,1);
@@ -49,6 +68,9 @@
     #ph-cat { padding: 3px 9px; border-radius: 12px; font-size: 11px; font-weight: 800; }
     #ph-close { background: none; border: none; color: #888; font-size: 21px; line-height: 1; cursor: pointer; }
     #ph-close:hover { color: #fff; }
+    #ph-share { background: none; border: none; color: #888; font-size: 16px; line-height: 1; cursor: pointer; padding: 0 2px; }
+    #ph-share:hover { color: #fff; }
+    #ph-share.copied { color: #4caf50; }
     #ph-nav { display: none; align-items: center; gap: 4px; margin-top: 6px; }
     #ph-nav button { background: rgba(255,255,255,.12); border: none; color: var(--text); border-radius: 5px; padding: 2px 8px; cursor: pointer; font-size: 14px; }
     #ph-nav button:hover { background: rgba(255,255,255,.25); }
@@ -107,7 +129,8 @@
     <input type="checkbox" id="f-4"  class="cb cb-4"  checked><label for="f-4"  class="cb-lbl">4</label>
     <input type="checkbox" id="f-5"  class="cb cb-5"        ><label for="f-5"  class="cb-lbl">5</label>
   </div>
-  <span id="loader"></span>
+  <span id="loader"><div id="loader-spinner"></div><span id="loader-text"></span></span>
+  <div id="loader-bar"></div>
   <button id="btn-3d" title="Toggle 3D terrain">3D</button>
 </div>
 
@@ -117,7 +140,8 @@
   <div id="ph">
     <div id="ph-top">
       <span id="ph-cat"></span><h3 id="ph-name"></h3>
-      <button id="ph-close">x</button>
+      <button id="ph-share" title="Copy link">&#128279;</button>
+      <button id="ph-close">&#x2715;</button>
     </div>
     <div id="ph-nav">
       <button id="ph-prev">&#8592;</button>
@@ -179,7 +203,15 @@ async function loadFGB(url, bbox) {
 let loading = 0;
 function setLoad(d) {
   loading += d;
-  document.getElementById('loader').textContent = loading > 0 ? 'Loading...' : '';
+  const el = document.getElementById('loader');
+  const txt = document.getElementById('loader-text');
+  if (loading > 0) {
+    el.classList.add('active');
+    txt.textContent = 'Loading…';
+  } else {
+    el.classList.remove('active');
+    txt.textContent = '';
+  }
 }
 
 function activeCats() {
@@ -425,6 +457,14 @@ function closePanel() {
 }
 function addTag(c,t) { const s=document.createElement('span'); s.className='tag'; s.textContent=t; c.appendChild(s); }
 document.getElementById('ph-close').onclick = closePanel;
+document.getElementById('ph-share').onclick = () => {
+  navigator.clipboard.writeText(window.location.href).then(() => {
+    const btn = document.getElementById('ph-share');
+    btn.classList.add('copied');
+    btn.textContent = '✓';
+    setTimeout(() => { btn.classList.remove('copied'); btn.innerHTML = '&#128279;'; }, 1800);
+  });
+};
 document.getElementById('ph-prev').onclick = () => { if (_featIdx > 0) { _featIdx--; renderPanel(); } };
 document.getElementById('ph-next').onclick = () => { if (_featIdx < _features.length-1) { _featIdx++; renderPanel(); } };
 
