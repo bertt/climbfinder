@@ -274,12 +274,12 @@ map.on('load', async () => {
   map.addLayer({ id:'lines-selected', type:'line', source:'climblines', minzoom:11,
     filter:['==',['get','id'],-1],
     layout:{'line-join':'round','line-cap':'round'},
-    paint:{'line-color':'#ff5500','line-width':12,'line-opacity':0.35,'line-blur':4}
+    paint:{'line-color':'#fff','line-width':14,'line-opacity':0.6,'line-blur':6}
   });
   map.addLayer({ id:'lines-selected-stroke', type:'line', source:'climblines', minzoom:11,
     filter:['==',['get','id'],-1],
     layout:{'line-join':'round','line-cap':'round'},
-    paint:{'line-color':'#ff5500','line-width':6,'line-opacity':0.98}
+    paint:{'line-color':catExpr,'line-width':6,'line-opacity':1.0}
   });
   map.addLayer({ id:'locs', type:'symbol', source:'localities',
     layout:{
